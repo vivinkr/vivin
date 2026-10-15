@@ -3,20 +3,28 @@ name: Build KAEL Music APK
 on:
 workflow_dispatch:
 push:
-paths:
-- 'KAEL_Music_Fresh_Android_Project.zip'
-- '.github/workflows/build.yml'
+branches:
+- main
 
 jobs:
 build:
 runs-on: ubuntu-latest
-steps:
-- name: Download repository
-uses: actions/checkout@v4
 
-  - name: Extract project ZIP
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+
+  - name: Extract Android project
     run: |
+      mkdir -p project
       unzip -o KAEL_Music_Fresh_Android_Project.zip -d project
+
+  - name: Inspect project structure
+    run: |
+      echo "Files extracted:"
+      find project -maxdepth 4 -type f | head -200
+      echo "Gradle wrappers:"
+      find project -type f -name gradlew
 
   - name: Set up Java
     uses: actions/setup-java@v4
@@ -24,17 +32,22 @@ uses: actions/checkout@v4
       distribution: temurin
       java-version: '17'
 
-  - name: Locate Gradle wrapper
-    run: find project -name gradlew -type f
-
-  - name: Build APK
+  - name: Build Android APK
     run: |
-      cd project/kael-fresh
-      chmod +x gradlew
+      WRAPPER=$(find project -type f -name gradlew | head -1)
+      if [ -z "$WRAPPER" ]; then
+        echo "ERROR: Gradle wrapper not found."
+        exit 1
+      fi
+      PROJECT_DIR=$(dirname "$WRAPPER")
+      chmod +x "$WRAPPER"
+      cd "$PROJECT_DIR"
       ./gradlew assembleDebug
 
   - name: Upload APK
+    if: success()
     uses: actions/upload-artifact@v4
     with:
       name: KAEL-Music-APK
-      path: project/kael-fresh/**/build/outputs/apk/debug/*.apk
+      path: project/**/build/outputs/apk/debug/*.apk
+      if-no-files-found: error
