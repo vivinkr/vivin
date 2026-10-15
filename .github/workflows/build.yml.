@@ -29,7 +29,7 @@ uses: actions/checkout@v4
 
   - name: Build APK
     run: |
-      cd project
+      cd project/kael-fresh
       chmod +x gradlew
       ./gradlew assembleDebug
 
@@ -37,4 +37,4 @@ uses: actions/checkout@v4
     uses: actions/upload-artifact@v4
     with:
       name: KAEL-Music-APK
-      path: project/**/build/outputs/apk/debug/*.apk
+      path: project/kael-fresh/**/build/outputs/apk/debug/*.apk
